@@ -1,0 +1,21 @@
+architecture:
+  version: 0.2
+  
+  subtree:
+  - name: PE
+    attributes:
+      technology: 40nm
+
+    local:
+    - name: Buffer
+      class: $c_class$
+      attributes:
+        depth: $depth$
+        width: $width$
+        block-size: 1
+        word-bits: $width$
+
+    - name: MACC
+      class: intmac
+      attributes:
+        datawidth: $width$

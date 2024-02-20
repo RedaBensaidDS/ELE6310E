@@ -2,6 +2,9 @@ mkdir -p timeloop-accelergy
 cd timeloop-accelergy
 git clone --recurse-submodules https://github.com/Accelergy-Project/accelergy-timeloop-infrastructure.git
 cd accelergy-timeloop-infrastructure
+git checkout ea3e227
+git submodule update --init --recursive
+
 
 # "make pull" does a git clone of some modules (not sure why this is
 # needed since the clone above was already recursive)
