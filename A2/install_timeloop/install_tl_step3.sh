@@ -1,5 +1,6 @@
 pip3 install --upgrade pip
 cd ../accelergy
+git checkout 9a8dc0d
 pip3 install .
 cd ../accelergy-aladdin-plug-in/
 git checkout 7fe4102
