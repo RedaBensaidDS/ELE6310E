@@ -15,10 +15,12 @@ import torchvision.transforms.functional as torchvision_F
 from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader
 from collections import OrderedDict, defaultdict
+from solution import Quantized_Conv2d, Quantized_Linear
+
 
 
 def load_CIFAR10_dataset(batch_size: int = 128, calibration_batch_size: int = 1024,
-                         data_path: str = './data'):
+                         data_path: str = './data', train_transform = None, test_transform = None):
     """
     download and loading the data loaders
     Args:
@@ -35,17 +37,18 @@ def load_CIFAR10_dataset(batch_size: int = 128, calibration_batch_size: int = 10
     if not os.path.isdir(data_path):
         os.makedirs(data_path)
     num_workers = os.cpu_count()
-
-    train_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=4),
-        transforms.ToTensor(),
-        transforms.Normalize(mean, std)
-    ])
-    test_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean, std)
-    ])
+    if train_transform == None : 
+        train_transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(32, padding=4),
+            transforms.ToTensor(),
+            transforms.Normalize(mean, std)
+        ])
+    if test_transform == None : 
+        test_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean, std)
+        ])
     train_data = dset.CIFAR10(data_path,
                               train=True,
                               transform=train_transform,
@@ -223,3 +226,84 @@ def model_size(model):
 
     size_all_mb = (param_size + buffer_size) / 1024**2
     return('model size: {:.3f}MB'.format(size_all_mb))
+
+
+def replace_with_quantized_modules(module: nn.Module):
+    """
+    Recursively replace all nn.Linear and nn.Conv2d in `module`
+    with Quantized_Linear and Quantized_Conv2d, copying weights/bias.
+    """
+    for name, child in list(module.named_children()):
+        # First recurse into children
+        replace_with_quantized_modules(child)
+
+        # Replace Linear
+        if isinstance(child, nn.Linear):
+            q_linear = Quantized_Linear(
+                in_features=child.in_features,
+                out_features=child.out_features,
+                bias=(child.bias is not None)
+            )
+            q_linear.load_state_dict(child.state_dict(), strict=False)
+            setattr(module, name, q_linear)
+
+        # Replace Conv2d
+        elif isinstance(child, nn.Conv2d):
+            q_conv = Quantized_Conv2d(
+                in_channels=child.in_channels,
+                out_channels=child.out_channels,
+                kernel_size=child.kernel_size,
+                stride=child.stride,
+                padding=child.padding,
+                dilation=child.dilation,
+                groups=child.groups,
+                bias=(child.bias is not None),
+            )
+            q_conv.load_state_dict(child.state_dict(), strict=False)
+            setattr(module, name, q_conv)
+
+
+def build_tinyvit_bitwidth_dict(model, bw) -> dict:
+    bitwidth_dict = {}
+
+    for name, m in model.named_modules():
+
+        if name == "patch_embed.conv1.conv":
+            bitwidth_dict[name] = bw["PATCH_CONV1"]
+        elif name == "patch_embed.conv2.conv":
+            bitwidth_dict[name] = bw["PATCH_CONV2"]
+
+        elif name.startswith("stages.0.blocks.") and ".conv1.conv" in name:
+            bitwidth_dict[name] = bw["MB_CONV_PW1"]
+        elif name.startswith("stages.0.blocks.") and ".conv2.conv" in name:
+            bitwidth_dict[name] = bw["MB_CONV_DW"]
+        elif name.startswith("stages.0.blocks.") and ".conv3.conv" in name:
+            bitwidth_dict[name] = bw["MB_CONV_PW2"]
+
+        elif ".downsample.conv1.conv" in name:
+            bitwidth_dict[name] = bw["DOWN_CONV1"]
+        elif ".downsample.conv2.conv" in name:
+            bitwidth_dict[name] = bw["DOWN_CONV2_DW"]
+        elif ".downsample.conv3.conv" in name:
+            bitwidth_dict[name] = bw["DOWN_CONV3"]
+
+        elif name.endswith(".attn.qkv"):
+            bitwidth_dict[name] = bw["ATTN_QKV"]
+        elif name.endswith(".attn.proj"):
+            bitwidth_dict[name] = bw["ATTN_PROJ"]
+
+        elif name.endswith(".mlp.fc1"):
+            bitwidth_dict[name] = bw["MLP_FC1"]
+        elif name.endswith(".mlp.fc2"):
+            bitwidth_dict[name] = bw["MLP_FC2"]
+
+        elif name.endswith(".local_conv.conv"):
+            bitwidth_dict[name] = bw["LOCAL_DWCONV"]
+
+        elif name == "head.fc":
+            bitwidth_dict[name] = bw["HEAD_FC"]
+
+        else:
+            bitwidth_dict[name] = 8
+
+    return bitwidth_dict

@@ -195,8 +195,7 @@ def quantized_conv2d_function(input: torch.Tensor, weight: torch.Tensor, bias: t
     ##### WRITE CODE HERE #####
     output = torch.zeros_like(input)
     return output
-
-
+  
 class Quantized_Linear(nn.Linear):
     def __init__(self, in_features, out_features, bias=True):
         super(Quantized_Linear, self).__init__(in_features, out_features, bias=bias)
@@ -217,8 +216,10 @@ class Quantized_Linear(nn.Linear):
             self.__reset_scale_and_zero__(input)
             zero_point = torch.tensor(0.)
             # compute quantized
+            signed_act = getattr(self, "act_signed", False)
+
             quantized_weight = linear_quantize_STE(self.weight, self.weight_scale, zero_point, self.weight_N_bits,True)
-            quantized_input = linear_quantize_STE(input, self.input_scale, zero_point, self.act_N_bits, False)
+            quantized_input = linear_quantize_STE(input, self.input_scale, zero_point, self.act_N_bits, signed_act)
             if self.bias is None:
                 quantized_bias = None
             else:
@@ -263,8 +264,10 @@ class Quantized_Conv2d(nn.Conv2d):
             self.__reset_scale_and_zero__(input)
             zero_point = torch.tensor(0.)
             # compute quantized
+            signed_act = getattr(self, "act_signed", False)
+
             quantized_weight = linear_quantize_STE(self.weight, self.weight_scale, zero_point, self.weight_N_bits,True)
-            quantized_input = linear_quantize_STE(input, self.input_scale, zero_point, self.act_N_bits, False)
+            quantized_input = linear_quantize_STE(input, self.input_scale, zero_point, self.act_N_bits, signed_act)
             if self.bias is None:
                 quantized_bias = None
             else:

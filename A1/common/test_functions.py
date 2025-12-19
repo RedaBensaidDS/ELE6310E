@@ -334,7 +334,6 @@ def plot_layers_histogram(quantized_model: torch.nn.Module, log: bool = True):
             axes[j].set_xticks(np.round(unique_weight, 2)[xtick_idx.astype(np.int)])
             j += 1
             
-
 def input_activation_hook(model, data):
     # add hook to record the min max value of the activation
     input_activation = {}
@@ -362,20 +361,36 @@ def input_activation_hook(model, data):
         h.remove()
     return input_activation, output_activation
 
-
 def model_to_quant(model, calibration_loader, act_N_bits=8, weight_N_bits=8, method='sym',
                    device=torch.device("cuda"), bitwidth_dict: Dict = None):
     quantized_model = copy.deepcopy(model)
-    input_activation, output_activation = input_activation_hook(quantized_model,
-                                                                next(iter(calibration_loader))[0].to(device))
+
+    input_activation, output_activation = input_activation_hook(
+        quantized_model,
+        next(iter(calibration_loader))[0].to(device)
+    )
+
     for name, m in quantized_model.named_modules():
-        if isinstance(m, Quantized_Conv2d) or isinstance(m, Quantized_Linear):
+        if isinstance(m, (Quantized_Conv2d, Quantized_Linear)):
             if name != 'conv1':
                 if bitwidth_dict is None:
                     m.weight_N_bits = weight_N_bits
                 else:
                     m.weight_N_bits = bitwidth_dict[name]
                 m.act_N_bits = act_N_bits
+
                 m.method = method
-                m.input_scale.data, _= reset_scale_unsigned(input_activation[name], m.act_N_bits)
+
+                act = input_activation[name]
+                act_signed = bool(act.min() < 0)
+
+                m.act_signed = act_signed
+
+                if act_signed:
+                    act_scale, _ = reset_scale_and_zero_point(act, m.act_N_bits, method='sym')
+                else:
+                    act_scale, _ = reset_scale_unsigned(act, m.act_N_bits)
+
+                m.input_scale.data = act_scale.to(m.input_scale.device)
+
     return quantized_model
