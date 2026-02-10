@@ -41,6 +41,12 @@ test -e ~/install_tl && rm -i ~/install_tl
 echo "Creating symlink to ${DIR}"
 ln -sv ${DIR} ~/install_tl
 
+# When debugging, we want to execute each step manually, so we stop here.
+if [ "${DEBUG_TL_INSTALL}" = "1" ]; then
+    echo "DEBUG_TL_INSTALL=1 → stopping"
+    return 0
+fi
+
 cd ~
 source ~/install_tl/install_tl_step0.sh
 

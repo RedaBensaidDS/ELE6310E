@@ -1,3 +1,5 @@
-pip install virtualenv
-python3 -m virtualenv ENV
-source ENV/bin/activate
+# Create a project directory and a python virtual environment
+mkdir -p timeloop-accelergy
+cd timeloop-accelergy
+python3 -m venv venv
+source venv/bin/activate
