@@ -10,3 +10,5 @@
 mkdir -p ${TL_EXEC_SAVE_PATH}
 # copy the executables
 cp -v ${TL_INSTALL_PREFIX}/bin/timeloop-* ${TL_EXEC_SAVE_PATH}/
+# copy the shared libraries
+cp -v ${TL_INSTALL_PREFIX}/lib/*.so ${TL_EXEC_SAVE_PATH}/

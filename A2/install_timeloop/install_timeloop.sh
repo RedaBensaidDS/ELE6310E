@@ -11,17 +11,19 @@
 ### from google.colab import drive
 ### drive.mount('/content/drive')
 
+#TODO: git clone commands assume SSH connection to github is set up.
+
 # ---------------------------------------------------------------------
 # CONFIG
 
 ## Timeloop installation path
-#export TL_INSTALL_PREFIX = "/bin" # for Google Colab
+#export TL_INSTALL_PREFIX = "/" # for Google Colab
 export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary)
 
 ## Whether to copy previously saved timeloop executables rather than
 ## recompiling
 #export TL_USE_SAVED_TIMELOOP=1
-## Location where executables can be saved
+## Location where executables and shared libraries can be saved
 export GOOGLE_DRIVE_PATH="/content/drive/MyDrive"
 export TL_EXEC_SAVE_PATH=${GOOGLE_DRIVE_PATH}/timeloop_colab_executables
 # ---------------------------------------------------------------------
@@ -47,33 +49,50 @@ if [ "${DEBUG_TL_INSTALL}" = "1" ]; then
     return 0
 fi
 
+echo "--- STEP 0: Installing system dependencies ---"
 cd ~
 source ~/install_tl/install_tl_step0.sh
 
-echo "---------- STARTING STEP 1 -----------"
+echo "---------- STEP 1: Create project dir and venv --------"
 source ~/install_tl/install_tl_step1.sh
 # we should now be in a python virtual environment
 
-echo "---------- STARTING STEP 2 -----------"
-source ~/install_tl/install_tl_step2.sh
+echo "---------- STEP 2: Clone accelergy-timeloop-infrastructure -----"
+git clone --recurse-submodules https://github.com/Accelergy-Project/accelergy-timeloop-infrastructure.git
+cd accelergy-timeloop-infrastructure
 
-echo "---------- STARTING STEP 3 -----------"
-source ~/install_tl/install_tl_step3.sh
+echo "---------- STEP 3: Install Accelergy -----------"
+# Need to remove accelergy-table-based-plug-ins because it doesn't
+# compile. Adding a prefix to the name will exclude it from the build.
+mv -v src/{,TMP_}accelergy-table-based-plug-ins
+make install_accelergy
 
 # Compile and install Timeloop
-echo "---------- STARTING STEP 4 -----------"
+echo "---------- STEP 4: Install Timeloop -----------"
 if [ $TL_USE_SAVED_TIMELOOP -eq 1 ]
 then
 		echo "Installing previously saved Timeloop executables:";
-		mkdir -p ${TL_INSTALL_PREFIX}/bin;
-		cp -v ${TL_EXEC_SAVE_PATH}/timeloop-* ${TL_INSTALL_PREFIX}/bin/;
-		chmod u+x ${TL_INSTALL_PREFIX}/bin/*
+		source ~/install_tl/timeloop_make_install_from_saved.sh
 else
 		echo "Compiling Timeloop...";
-		source ~/install_tl/install_tl_step4.sh;
-		echo "---------- STARTING STEP 4b -----------";
-		source ~/install_tl/install_tl_step4b.sh
+		# Keep only the first 173 lines of the Makefile to remove the
+		# hardcoded install paths
+		head -n173 Makefile > Makefile
+		make install_timeloop
+		source ~/install_tl/timeloop_make_install.sh
 fi
 
-echo "---------- STARTING STEP 5 -----------"
+echo "---------- STEP 5: Install Timeloop python front-end -----"
 source ~/install_tl/install_tl_step5.sh
+
+echo "---------- STEP 6: Retrieve and tweak tutorial -----"
+source ~/install_tl/install_tl_step6.sh
+
+# Suggest PATH and LD_LIBRARY_PATH variables
+#TODO: suggest update to PATH, unless we are going to always go
+#      through the python front-end...
+echo "*** Additional step: Ensure shared libs can be found ***"
+MSG="export LD_LIBRARY_PATH=\"${TL_INSTALL_PREFIX}/lib"
+MSG+=':${LD_LIBRARY_PATH}'
+echo MSG
+#TODO: Also need to figure out where barvinok shared libs were installed
