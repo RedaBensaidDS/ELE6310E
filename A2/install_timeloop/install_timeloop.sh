@@ -9,7 +9,7 @@
 # a location in your google drive. Your google drive can be mounted by
 # executing the following notebook cell:
 ### from google.colab import drive
-### drive.mount('/content/drive')
+### drive.mount('/content/gdrive')
 
 #TODO: git clone commands assume SSH connection to github is set up.
 
@@ -17,14 +17,17 @@
 # CONFIG
 
 ## Timeloop installation path
-#export TL_INSTALL_PREFIX = "/" # for Google Colab
+#export TL_INSTALL_PREFIX="/" # for Google Colab
 export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary)
 
 ## Whether to copy previously saved timeloop executables rather than
-## recompiling
+## recompiling. Use save_timeloop.sh to save the executables and
+## libraries once they have been compiled once.
 #export TL_USE_SAVED_TIMELOOP=1
-## Location where executables and shared libraries can be saved
-export GOOGLE_DRIVE_PATH="/content/drive/MyDrive"
+
+## Location where executables and shared libraries can be saved.
+## MAKE SURE this path matches the mount point for your drive
+export GOOGLE_DRIVE_PATH="/content/gdrive/MyDrive"
 export TL_EXEC_SAVE_PATH=${GOOGLE_DRIVE_PATH}/timeloop_colab_executables
 # ---------------------------------------------------------------------
 
@@ -77,9 +80,13 @@ else
 		echo "Compiling Timeloop...";
 		# Keep only the first 173 lines of the Makefile to remove the
 		# hardcoded install paths
-		head -n173 Makefile > Makefile
+		head -n173 Makefile > Makefile_new
+		rm Makefile
+		mv Makefile_new Makefile
 		make install_timeloop
 		source ~/install_tl/timeloop_make_install.sh
+		#TODO: We could directly save the bin and lib at this point if
+		#option has been selected instead of requiring a separate script.
 fi
 
 echo "---------- STEP 5: Install Timeloop python front-end -----"
@@ -94,5 +101,5 @@ source ~/install_tl/install_tl_step6.sh
 echo "*** Additional step: Ensure shared libs can be found ***"
 MSG="export LD_LIBRARY_PATH=\"${TL_INSTALL_PREFIX}/lib"
 MSG+=':${LD_LIBRARY_PATH}'
-echo MSG
+echo $MSG
 #TODO: Also need to figure out where barvinok shared libs were installed
