@@ -14,15 +14,22 @@
 #TODO: git clone commands assume SSH connection to github is set up.
 
 # ---------------------------------------------------------------------
-# CONFIG
+#                           CONFIG
+# ---------------------------------------------------------------------
+## Set to 1 if running on Google Colab, 0 otherwise.
+export COLAB_ENV=0
 
 ## Timeloop installation path
-#export TL_INSTALL_PREFIX="" # for Google Colab
-export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary)
+if [ "${COLAB_ENV}" = "1" ]; then
+		export TL_INSTALL_PREFIX="" # for Google Colab
+else
+		export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary)
+fi
 
 ## Whether to copy previously saved timeloop executables rather than
 ## recompiling. Use save_timeloop.sh to save the executables and
 ## libraries once they have been compiled once.
+#TODO: DOESN'T WORK!
 #export TL_USE_SAVED_TIMELOOP=1
 
 ## Location where executables and shared libraries can be saved.
@@ -31,12 +38,18 @@ export GOOGLE_DRIVE_PATH="/content/gdrive/MyDrive"
 export TL_EXEC_SAVE_PATH="${GOOGLE_DRIVE_PATH}/timeloop_colab_executables"
 
 ## Can optionally get the git projects from Google Drive instead of
-## cloning from github. In this case the projects listed in Step 2
-## must first be cloned manually in the $PROJ_COPY_SRC directory
-## specified below.
-#LN_INSTEAD_OF_CLONE=1
+## cloning from github (recommended for Colab). In this case the
+## projects listed in Step 2 must first be cloned manually in the
+## $PROJ_COPY_SRC directory specified below.
 PROJ_SRC="${GOOGLE_DRIVE_PATH}/timeloop_git_projects"
-# ---------------------------------------------------------------------
+if [ "${COLAB_ENV}" = "1" ]; then
+		# Value in Colab
+		LN_INSTEAD_OF_CLONE=1
+else
+		# Value elsewhere
+		LN_INSTEAD_OF_CLONE=0
+fi
+# ------------------------END CONFIG----------------------------------
 
 # Get location of this script
 # https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script
@@ -105,8 +118,6 @@ else
 		mv Makefile_new Makefile
 		make install_timeloop
 		source ~/install_tl/timeloop_make_install.sh
-		#TODO: We could directly save the bin and lib at this point if
-		#option has been selected instead of requiring a separate script.
 fi
 
 echo "---------- STEP 5: Install Timeloop python front-end -----"
@@ -115,11 +126,19 @@ source ~/install_tl/install_tl_step5.sh
 echo "---------- STEP 6: Retrieve and tweak tutorial -----"
 source ~/install_tl/install_tl_step6.sh
 
-# Suggest PATH and LD_LIBRARY_PATH variables
+# Set/Suggest PATH and LD_LIBRARY_PATH variables
 #TODO: suggest update to PATH, unless we are going to always go
 #      through the python front-end...
-echo "*** Additional step: Ensure shared libs can be found ***"
-MSG="export LD_LIBRARY_PATH=\"${TL_INSTALL_PREFIX}/lib"
-MSG+=':${LD_LIBRARY_PATH}'
+MY_LIB_PATHS="${TL_INSTALL_PREFIX}/lib:/usr/local/lib"
+export LD_LIBRARY_PATH="${MY_LIB_PATHS}:${LD_LIBRARY_PATH}"
+echo "LD_LIBRARY_PATH has been set to: ${LD_LIBRARY_PATH}"
+		
+echo "*** Additional step: The update to LD_LIBRARY_PATH can be made persistent by adding this command to your shell startup script such as .bashrc."
+MSG="export LD_LIBRARY_PATH=\"${MY_LIB_PATHS}"
+MSG+=':${LD_LIBRARY_PATH}"'
 echo $MSG
-#TODO: Also need to figure out where barvinok shared libs were installed
+
+# Additional tweak on Colab:
+if [ "${COLAB_ENV}" = "1" ]; then
+		chmod u+x /usr/local/share/accelergy/estimation_plug_ins/accelergy-cacti-plug-in/cacti
+fi

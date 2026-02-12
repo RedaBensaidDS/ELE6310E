@@ -16,3 +16,5 @@ cp -v ${TL_INSTALL_PREFIX}/bin/einsumgraph ${TL_EXEC_SAVE_PATH}/bin/
 cp -v ${TL_INSTALL_PREFIX}/bin/looptree-model ${TL_EXEC_SAVE_PATH}/bin/
 # copy the shared libraries
 cp -v ${TL_INSTALL_PREFIX}/lib/libtimeloop* ${TL_EXEC_SAVE_PATH}/lib/
+cp -v /usr/local/lib/libbarvinok* ${TL_EXEC_SAVE_PATH}/lib/
+cp -v /usr/local/lib/libntl* ${TL_EXEC_SAVE_PATH}/lib/
