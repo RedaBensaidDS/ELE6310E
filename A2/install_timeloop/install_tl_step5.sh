@@ -1,9 +1,7 @@
-cd .. # i.e. ~/timeloop-accelergy
-TIMELOOP_BASE="$PWD"
-TIMELOOP_BASE+="/accelergy-timeloop-infrastructure/src/timeloop"
-git clone --recurse-submodules git@github.com:Accelergy-Project/timeloop-python.git
+cd ${MY_PROJ_DIR}
+TIMELOOP_BASE="${MY_PROJ_DIR}/accelergy-timeloop-infrastructure/src/timeloop"
 cd timeloop-python
-export TIMELOOP_INCLUDE_PATH="$TIMELOOP_BASE/include"
-export TIMELOOP_LIB_PATH="$TIMELOOP_BASE/build"
-#TODO: Would need to remove the build/ directory if it exists
+export TIMELOOP_INCLUDE_PATH="${TIMELOOP_BASE}/include"
+export TIMELOOP_LIB_PATH="${TL_INSTALL_PREFIX}/lib"
+rm -Rf build
 pip3 install -e .

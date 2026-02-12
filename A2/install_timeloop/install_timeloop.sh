@@ -17,7 +17,7 @@
 # CONFIG
 
 ## Timeloop installation path
-#export TL_INSTALL_PREFIX="/" # for Google Colab
+#export TL_INSTALL_PREFIX="" # for Google Colab
 export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary)
 
 ## Whether to copy previously saved timeloop executables rather than
@@ -28,7 +28,14 @@ export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary
 ## Location where executables and shared libraries can be saved.
 ## MAKE SURE this path matches the mount point for your drive
 export GOOGLE_DRIVE_PATH="/content/gdrive/MyDrive"
-export TL_EXEC_SAVE_PATH=${GOOGLE_DRIVE_PATH}/timeloop_colab_executables
+export TL_EXEC_SAVE_PATH="${GOOGLE_DRIVE_PATH}/timeloop_colab_executables"
+
+## Can optionally get the git projects from Google Drive instead of
+## cloning from github. In this case the projects listed in Step 2
+## must first be cloned manually in the $PROJ_COPY_SRC directory
+## specified below.
+#LN_INSTEAD_OF_CLONE=1
+PROJ_SRC="${GOOGLE_DRIVE_PATH}/timeloop_git_projects"
 # ---------------------------------------------------------------------
 
 # Get location of this script
@@ -57,14 +64,27 @@ cd ~
 source ~/install_tl/install_tl_step0.sh
 
 echo "---------- STEP 1: Create project dir and venv --------"
+export MY_PROJ_DIR="${PWD}/timeloop-accelergy"
 source ~/install_tl/install_tl_step1.sh
 # we should now be in a python virtual environment
 
-echo "---------- STEP 2: Clone accelergy-timeloop-infrastructure -----"
-git clone --recurse-submodules https://github.com/Accelergy-Project/accelergy-timeloop-infrastructure.git
-cd accelergy-timeloop-infrastructure
+echo "---------- STEP 2: Clone or symlink all projects -----"
+if [ $LN_INSTEAD_OF_CLONE -eq 1 ]
+then
+		ln -s ${PROJ_SRC}/accelergy-timeloop-infrastructure .
+		ln -s ${PROJ_SRC}/timeloop-python .
+		ln -s ${PROJ_SRC}/timeloop-accelergy-exercises .
+else
+		# accelergy-timeloop-infrastructure
+		git clone --recurse-submodules https://github.com/Accelergy-Project/accelergy-timeloop-infrastructure.git
+		# python front-end: timeloop-python
+		git clone --recurse-submodules git@github.com:Accelergy-Project/timeloop-python.git
+		# Tutorial
+		git clone git@github.com:Accelergy-Project/timeloop-accelergy-exercises.git
+fi
 
 echo "---------- STEP 3: Install Accelergy -----------"
+cd accelergy-timeloop-infrastructure
 # Need to remove accelergy-table-based-plug-ins because it doesn't
 # compile. Adding a prefix to the name will exclude it from the build.
 mv -v src/{,TMP_}accelergy-table-based-plug-ins
