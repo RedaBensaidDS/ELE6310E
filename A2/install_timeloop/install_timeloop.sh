@@ -98,9 +98,6 @@ fi
 
 echo "---------- STEP 3: Install Accelergy -----------"
 cd accelergy-timeloop-infrastructure
-# Need to remove accelergy-table-based-plug-ins because it doesn't
-# compile. Adding a prefix to the name will exclude it from the build.
-mv -v src/{,TMP_}accelergy-table-based-plug-ins
 make install_accelergy
 
 # Compile and install Timeloop
