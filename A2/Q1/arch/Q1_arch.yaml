@@ -1,33 +1,30 @@
 architecture:
-  version: 0.2
-  
-  subtree:
-  - name: System
+  version: 0.4
+  nodes:
+  - !Container
+    name: System
     attributes:
-      technology: 45nm
+      technology: "45nm"
+      global_cycle_seconds: 1e-9
 
-    local:
-    - name: MainMemory
-      class: SRAM
-      attributes:
-        depth: 32768
-        width: 8
-        block-size: 1
-        word-bits: 8
-        
-    subtree:
-    - name: PE
+  - !Component
+    name: MainMemory
+    class: SRAM
+    attributes:
+      depth: 32768
+      width: 8
+      datawidth: 8
+      
+  - !Component
+    name: Buffer
+    class: regfile
+    attributes:
+      depth: 64
+      width: 8
+      datawidth: 8
 
-      local:
-      - name: Buffer
-        class: regfile
-        attributes:
-          depth: 64
-          width: 8
-          block-size: 1
-          word-bits: 8
-
-      - name: MACC
-        class: intmac
-        attributes:
-          datawidth: 8
+  - !Component
+    name: MACC
+    class: intmac
+    attributes:
+      width: 8
