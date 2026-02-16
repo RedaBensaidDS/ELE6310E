@@ -295,7 +295,7 @@ def plot_real_dequantized_histogram(x,N_bits=4, log=True):
         axes[j].set_title(method + '\n MSE:' + str(np.round(mse, 5)))
         axes[j].legend()
         _, xtick_idx = np.histogram(np.arange(len(unique_weight)), 5)
-        axes[j].set_xticks(np.round(unique_weight, 2)[xtick_idx.astype(np.int)])
+        axes[j].set_xticks(np.round(unique_weight, 2)[xtick_idx.astype(int)])
 
 def plot_layers_histogram(quantized_model: torch.nn.Module, log: bool = True):
     module_names = ['layer1.0.conv1', 'layer2.0.conv1', 'layer3.0.conv1', 'fc']
@@ -331,7 +331,7 @@ def plot_layers_histogram(quantized_model: torch.nn.Module, log: bool = True):
             axes[j].set_title(name + '\n MSE:' + str(np.round(mse, 5)))
             axes[j].legend()
             _, xtick_idx = np.histogram(np.arange(len(unique_weight)), 5)
-            axes[j].set_xticks(np.round(unique_weight, 2)[xtick_idx.astype(np.int)])
+            axes[j].set_xticks(np.round(unique_weight, 2)[xtick_idx.astype(int)])
             j += 1
             
 def input_activation_hook(model, data):

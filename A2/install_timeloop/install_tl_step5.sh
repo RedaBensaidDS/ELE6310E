@@ -1,4 +1,7 @@
-cd ../../..
-git clone https://github.com/Accelergy-Project/timeloop-accelergy-exercises.git
-accelergy
-accelergyTables
+cd ${MY_PROJ_DIR}
+TIMELOOP_BASE="${MY_PROJ_DIR}/accelergy-timeloop-infrastructure/src/timeloop"
+cd timeloop-python
+export TIMELOOP_INCLUDE_PATH="${TIMELOOP_BASE}/include"
+export TIMELOOP_LIB_PATH="${TL_INSTALL_PREFIX}/lib"
+rm -Rf build
+pip3 install -e .

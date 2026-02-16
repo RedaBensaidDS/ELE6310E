@@ -1,8 +1,9 @@
 problem:
+  version: 0.4
   shape:
     name: Conv1D_OC
     dimensions: [ M, R, P ]
-    data-spaces:
+    data_spaces:
     - name: Weights
       projection:
       - [ [M] ]
@@ -14,7 +15,7 @@ problem:
       projection:
       - [ [M] ]
       - [ [P] ]
-      read-write: True
+      read_write: True
 
   instance:
     M: 32

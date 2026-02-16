@@ -4,19 +4,31 @@ architecture:
   - !Container
     name: System
     attributes:
-      technology: "45nm"
+      technology: "40nm"
       global_cycle_seconds: 1e-9
 
   - !Component
     name: MainMemory
+    class: DRAM
+    attributes:
+      depth: 32768
+      width: 256
+      datawidth: 8
+
+  - !Component
+    name: GlobalBuffer
     class: SRAM
     attributes:
       depth: 32768
-      width: 8
+      width: 64
       datawidth: 8
-      
+
+  - !Container
+    name: PE
+    spatial: {meshX: 16}
+
   - !Component
-    name: Buffer
+    name: RegisterFile
     class: regfile
     attributes:
       depth: 64

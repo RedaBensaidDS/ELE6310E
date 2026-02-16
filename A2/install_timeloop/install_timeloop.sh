@@ -9,22 +9,47 @@
 # a location in your google drive. Your google drive can be mounted by
 # executing the following notebook cell:
 ### from google.colab import drive
-### drive.mount('/content/drive')
+### drive.mount('/content/gdrive')
+
+#TODO: git clone commands assume SSH connection to github is set up.
 
 # ---------------------------------------------------------------------
-# CONFIG
+#                           CONFIG
+# ---------------------------------------------------------------------
+## Set to 1 if running on Google Colab, 0 otherwise.
+export COLAB_ENV=0
 
 ## Timeloop installation path
-#export TL_INSTALL_PREFIX = "/bin" # for Google Colab
-export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary)
+if [ "${COLAB_ENV}" = "1" ]; then
+		export TL_INSTALL_PREFIX="" # for Google Colab
+else
+		export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary)
+fi
 
 ## Whether to copy previously saved timeloop executables rather than
-## recompiling
+## recompiling. Use save_timeloop.sh to save the executables and
+## libraries once they have been compiled once.
+#TODO: DOESN'T WORK!
 #export TL_USE_SAVED_TIMELOOP=1
-## Location where executables can be saved
-export GOOGLE_DRIVE_PATH="/content/drive/MyDrive"
-export TL_EXEC_SAVE_PATH=${GOOGLE_DRIVE_PATH}/timeloop_colab_executables
-# ---------------------------------------------------------------------
+
+## Location where executables and shared libraries can be saved.
+## MAKE SURE this path matches the mount point for your drive
+export GOOGLE_DRIVE_PATH="/content/gdrive/MyDrive"
+export TL_EXEC_SAVE_PATH="${GOOGLE_DRIVE_PATH}/timeloop_colab_executables"
+
+## Can optionally get the git projects from Google Drive instead of
+## cloning from github (recommended for Colab). In this case the
+## projects listed in Step 2 must first be cloned manually in the
+## $PROJ_COPY_SRC directory specified below.
+PROJ_SRC="${GOOGLE_DRIVE_PATH}/timeloop_git_projects"
+if [ "${COLAB_ENV}" = "1" ]; then
+		# Value in Colab
+		LN_INSTEAD_OF_CLONE=1
+else
+		# Value elsewhere
+		LN_INSTEAD_OF_CLONE=0
+fi
+# ------------------------END CONFIG----------------------------------
 
 # Get location of this script
 # https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script
@@ -41,33 +66,76 @@ test -e ~/install_tl && rm -i ~/install_tl
 echo "Creating symlink to ${DIR}"
 ln -sv ${DIR} ~/install_tl
 
+# When debugging, we want to execute each step manually, so we stop here.
+if [ "${DEBUG_TL_INSTALL}" = "1" ]; then
+    echo "DEBUG_TL_INSTALL=1 → stopping"
+    return 0
+fi
+
+echo "--- STEP 0: Installing system dependencies ---"
 cd ~
 source ~/install_tl/install_tl_step0.sh
 
-echo "---------- STARTING STEP 1 -----------"
+echo "---------- STEP 1: Create project dir and venv --------"
+export MY_PROJ_DIR="${PWD}/timeloop-accelergy"
 source ~/install_tl/install_tl_step1.sh
 # we should now be in a python virtual environment
 
-echo "---------- STARTING STEP 2 -----------"
-source ~/install_tl/install_tl_step2.sh
+echo "---------- STEP 2: Clone or symlink all projects -----"
+if [ $LN_INSTEAD_OF_CLONE -eq 1 ]
+then
+		ln -s ${PROJ_SRC}/accelergy-timeloop-infrastructure .
+		ln -s ${PROJ_SRC}/timeloop-python .
+		ln -s ${PROJ_SRC}/timeloop-accelergy-exercises .
+else
+		# accelergy-timeloop-infrastructure
+		git clone --recurse-submodules https://github.com/Accelergy-Project/accelergy-timeloop-infrastructure.git
+		# python front-end: timeloop-python
+		git clone --recurse-submodules git@github.com:Accelergy-Project/timeloop-python.git
+		# Tutorial
+		git clone git@github.com:Accelergy-Project/timeloop-accelergy-exercises.git
+fi
 
-echo "---------- STARTING STEP 3 -----------"
-source ~/install_tl/install_tl_step3.sh
+echo "---------- STEP 3: Install Accelergy -----------"
+cd accelergy-timeloop-infrastructure
+make install_accelergy
 
 # Compile and install Timeloop
-echo "---------- STARTING STEP 4 -----------"
+echo "---------- STEP 4: Install Timeloop -----------"
 if [ $TL_USE_SAVED_TIMELOOP -eq 1 ]
 then
 		echo "Installing previously saved Timeloop executables:";
-		mkdir -p ${TL_INSTALL_PREFIX}/bin;
-		cp -v ${TL_EXEC_SAVE_PATH}/timeloop-* ${TL_INSTALL_PREFIX}/bin/;
-		chmod u+x ${TL_INSTALL_PREFIX}/bin/*
+		source ~/install_tl/timeloop_make_install_from_saved.sh
 else
 		echo "Compiling Timeloop...";
-		source ~/install_tl/install_tl_step4.sh;
-		echo "---------- STARTING STEP 4b -----------";
-		source ~/install_tl/install_tl_step4b.sh
+		# Keep only the first 173 lines of the Makefile to remove the
+		# hardcoded install paths
+		head -n173 Makefile > Makefile_new
+		rm Makefile
+		mv Makefile_new Makefile
+		make install_timeloop
+		source ~/install_tl/timeloop_make_install.sh
 fi
 
-echo "---------- STARTING STEP 5 -----------"
+echo "---------- STEP 5: Install Timeloop python front-end -----"
 source ~/install_tl/install_tl_step5.sh
+
+echo "---------- STEP 6: Retrieve and tweak tutorial -----"
+source ~/install_tl/install_tl_step6.sh
+
+# Set/Suggest PATH and LD_LIBRARY_PATH variables
+#TODO: suggest update to PATH, unless we are going to always go
+#      through the python front-end...
+MY_LIB_PATHS="${TL_INSTALL_PREFIX}/lib:/usr/local/lib"
+export LD_LIBRARY_PATH="${MY_LIB_PATHS}:${LD_LIBRARY_PATH}"
+echo "LD_LIBRARY_PATH has been set to: ${LD_LIBRARY_PATH}"
+		
+echo "*** Additional step: The update to LD_LIBRARY_PATH can be made persistent by adding this command to your shell startup script such as .bashrc."
+MSG="export LD_LIBRARY_PATH=\"${MY_LIB_PATHS}"
+MSG+=':${LD_LIBRARY_PATH}"'
+echo $MSG
+
+# Additional tweak on Colab:
+if [ "${COLAB_ENV}" = "1" ]; then
+		chmod u+x /usr/local/share/accelergy/estimation_plug_ins/accelergy-cacti-plug-in/cacti
+fi
