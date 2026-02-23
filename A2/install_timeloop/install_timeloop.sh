@@ -13,8 +13,6 @@
 
 #TODO: git clone commands assume SSH connection to github is set up.
 
-set -eu
-
 # ---------------------------------------------------------------------
 #                           CONFIG
 # ---------------------------------------------------------------------
@@ -42,7 +40,7 @@ export TL_EXEC_SAVE_PATH="${GOOGLE_DRIVE_PATH}/timeloop_colab_executables"
 ## Can optionally get the git projects from Google Drive instead of
 ## cloning from github (recommended for Colab). In this case the
 ## projects listed in Step 2 must first be cloned manually in the
-## $PROJ_COPY_SRC directory specified below.
+## $PROJ_SRC directory specified below.
 PROJ_SRC="${GOOGLE_DRIVE_PATH}/timeloop_git_projects"
 if [ "${COLAB_ENV}" = "1" ]; then
 		# Value in Colab
@@ -126,32 +124,8 @@ echo "---------- STEP 6: Retrieve and tweak tutorial -----"
 source ~/install_tl/install_tl_step6.sh
 
 # Set/Suggest PATH and LD_LIBRARY_PATH variables
-# PATH
-exe_name="timeloop-model"
-install_bin_dir="${TL_INSTALL_PREFIX}/bin"
-
-# 1) Si l'exécutable n'est PAS trouvé dans le PATH actuel…
-if ! command -v "$exe_name" >/dev/null 2>&1; then
-  # (optionnel) vérifier que l'exécutable existe bien dans le répertoire cible
-  if [ -x "$install_bin_dir/$exe_name" ]; then
-    # 2) Ajouter install_bin_dir à PATH s'il n'y est pas déjà (évite les doublons)
-    case ":$PATH:" in
-      *":$install_bin_dir:"*) : ;;  # déjà présent → ne rien faire
-      *) PATH="$install_bin_dir:$PATH"; export PATH ;;
-    esac
-  else
-    echo "Error: $install_bin_dir/$exe_name not found or not executable." >&2
-  fi
-fi
-# LD_LIBRARY_PATH
-MY_LIB_PATHS="${TL_INSTALL_PREFIX}/lib:/usr/local/lib"
-export LD_LIBRARY_PATH="${MY_LIB_PATHS}:${LD_LIBRARY_PATH}"
-echo "LD_LIBRARY_PATH has been set to: ${LD_LIBRARY_PATH}"
-		
-echo "*** Additional step: The update to LD_LIBRARY_PATH can be made persistent by adding this command to your shell startup script such as .bashrc."
-MSG="export LD_LIBRARY_PATH=\"${MY_LIB_PATHS}"
-MSG+=':${LD_LIBRARY_PATH}"'
-echo $MSG
+echo "---------- STEP 7: Set PATH and LD_LIBRARY_PATH env variables -----"
+source ~/install_tl/install_tl_step7.sh
 
 # Additional tweak on Colab:
 if [ "${COLAB_ENV}" = "1" ]; then
