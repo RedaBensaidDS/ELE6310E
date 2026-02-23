@@ -40,7 +40,7 @@ export TL_EXEC_SAVE_PATH="${GOOGLE_DRIVE_PATH}/timeloop_colab_executables"
 ## Can optionally get the git projects from Google Drive instead of
 ## cloning from github (recommended for Colab). In this case the
 ## projects listed in Step 2 must first be cloned manually in the
-## $PROJ_COPY_SRC directory specified below.
+## $PROJ_SRC directory specified below.
 PROJ_SRC="${GOOGLE_DRIVE_PATH}/timeloop_git_projects"
 if [ "${COLAB_ENV}" = "1" ]; then
 		# Value in Colab
@@ -124,16 +124,8 @@ echo "---------- STEP 6: Retrieve and tweak tutorial -----"
 source ~/install_tl/install_tl_step6.sh
 
 # Set/Suggest PATH and LD_LIBRARY_PATH variables
-#TODO: suggest update to PATH, unless we are going to always go
-#      through the python front-end...
-MY_LIB_PATHS="${TL_INSTALL_PREFIX}/lib:/usr/local/lib"
-export LD_LIBRARY_PATH="${MY_LIB_PATHS}:${LD_LIBRARY_PATH}"
-echo "LD_LIBRARY_PATH has been set to: ${LD_LIBRARY_PATH}"
-		
-echo "*** Additional step: The update to LD_LIBRARY_PATH can be made persistent by adding this command to your shell startup script such as .bashrc."
-MSG="export LD_LIBRARY_PATH=\"${MY_LIB_PATHS}"
-MSG+=':${LD_LIBRARY_PATH}"'
-echo $MSG
+echo "---------- STEP 7: Set PATH and LD_LIBRARY_PATH env variables -----"
+source ~/install_tl/install_tl_step7.sh
 
 # Additional tweak on Colab:
 if [ "${COLAB_ENV}" = "1" ]; then
