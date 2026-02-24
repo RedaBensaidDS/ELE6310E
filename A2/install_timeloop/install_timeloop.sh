@@ -11,8 +11,6 @@
 ### from google.colab import drive
 ### drive.mount('/content/gdrive')
 
-#TODO: git clone commands assume SSH connection to github is set up.
-
 # ---------------------------------------------------------------------
 #                           CONFIG
 # ---------------------------------------------------------------------
@@ -91,9 +89,9 @@ else
 		# accelergy-timeloop-infrastructure
 		git clone --recurse-submodules https://github.com/Accelergy-Project/accelergy-timeloop-infrastructure.git
 		# python front-end: timeloop-python
-		git clone --recurse-submodules git@github.com:Accelergy-Project/timeloop-python.git
+		git clone --recurse-submodules https://github.com/Accelergy-Project/timeloop-python.git
 		# Tutorial
-		git clone git@github.com:Accelergy-Project/timeloop-accelergy-exercises.git
+		git clone https://github.com/Accelergy-Project/timeloop-accelergy-exercises.git
 fi
 
 echo "---------- STEP 3: Install Accelergy -----------"
