@@ -92,7 +92,7 @@ def Extract_Stats(path="timeloop-mapper.stats.txt"):
 
     return energy_total, Cycles, EDAP, GFLOPs
 
-def Run_Accelergy(current_path, path_to_eyeriss_files='Q3'):
+def Run_Accelergy(current_path=None, path_to_eyeriss_files='Q3'):
     #current path where timeloop generates the stat files
     if current_path is None : 
         current_path = os.getcwd()
