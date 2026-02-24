@@ -92,8 +92,10 @@ def Extract_Stats(path="timeloop-mapper.stats.txt"):
 
     return energy_total, Cycles, EDAP, GFLOPs
 
-def Run_Accelergy(path_to_eyeriss_files='Q3'):
-    current_path = os.getcwd()
+def Run_Accelergy(current_path, path_to_eyeriss_files='Q3'):
+    #current path where timeloop generates the stat files
+    if current_path is None : 
+        current_path = os.getcwd()
     path_to_eyeriss_files = os.path.join(current_path, path_to_eyeriss_files)
     name_layers = os.listdir(os.path.join(path_to_eyeriss_files, 'prob'))
     os.system(f"rm -rf {current_path}/timeloop-model.stats.txt")
