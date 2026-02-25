@@ -117,8 +117,8 @@ else
 		rm Makefile
 		mv Makefile_new Makefile
 		# also update the number of parallel jobs
-		sed -E "s/\bmake[[:space:]]+-j[[:space:]]*8\b/make -j${JOBS}/g" Makefile
-		sed -E "s/\bscons[[:space:]]+-j[[:space:]]*8\b/scons -j${JOBS}/g" Makefile
+		sed -i -E "s/\bmake[[:space:]]+-j[[:space:]]*8\b/make -j${JOBS}/g" Makefile
+		sed -i -E "s/\bscons[[:space:]]+-j[[:space:]]*8\b/scons -j${JOBS}/g" Makefile
 		make install_timeloop
 		source ~/install_tl/timeloop_make_install.sh
 fi
