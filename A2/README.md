@@ -45,4 +45,4 @@ in that case, the result will be in `ERT_summary.yaml`
 
 
 # Question 3
-First, complete the `model_to_spars` and `generate_resnet_layers` in `solution.py`. Then follow instructions in `main.ipynb` notebook and prune the network. After fine-tuning, save the model and generate the YAML files for each layers of the pruned network. Then you can use `run_Accelergy` to estimate the energy consumption of pruned network.
+First, complete the `distill_from_frozen_teacher` in `solution.py`. Then follow instructions in `main.ipynb` notebook and distill the given DINOv2 teacher into your student network. After fine-tuning, save the model and generate the YAML files for each layers of the distilled student network. Then you can use `run_Accelergy` to estimate the energy consumption of student model.

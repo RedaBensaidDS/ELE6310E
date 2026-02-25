@@ -7,6 +7,7 @@ import torch.nn.utils.prune as prune
 import numpy as np
 from typing import Dict
 import os
+from common.utils import evaluate
 
 
 # ---------------------------------------------------------------------------
@@ -91,8 +92,10 @@ def Extract_Stats(path="timeloop-mapper.stats.txt"):
 
     return energy_total, Cycles, EDAP, GFLOPs
 
-def Run_Accelergy(path_to_eyeriss_files='Q3'):
-    current_path = os.getcwd()
+def Run_Accelergy(current_path=None, path_to_eyeriss_files='Q3'):
+    #current path where timeloop generates the stat files
+    if current_path is None : 
+        current_path = os.getcwd()
     path_to_eyeriss_files = os.path.join(current_path, path_to_eyeriss_files)
     name_layers = os.listdir(os.path.join(path_to_eyeriss_files, 'prob'))
     os.system(f"rm -rf {current_path}/timeloop-model.stats.txt")
@@ -107,32 +110,6 @@ def Run_Accelergy(path_to_eyeriss_files='Q3'):
         os.system(f"rm -rf {current_path}/timeloop-model.stats.txt")
     print(f"Total energy consumption for ResNet-32: {energy_total} uJ")
     return energy_total
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-
-def model_to_spars(model, prune_ratio_dict: Dict):
-    """
-    Prune the model according to the prune_ratio_dict
-    Args:
-        model:
-        prune_ratio_dict:
-
-    Returns:
-
-    """
-    sparsed_model = copy.deepcopy(model)
-    for name, m in sparsed_model.named_modules():
-        if isinstance(m, nn.Conv2d):
-            if name in prune_ratio_dict.keys():
-                # prune the conv layer using `torch.nn.utils.prune.ln_structured` function.
-                # Prune the output channels based on L2 norm of the weight.
-                ##### WRITE CODE HERE #####
-                pass
-            else:
-                warnings.warn(f"not found ratio for module {name}")
-    return sparsed_model
-
 
 def generate_resnet_layers(model, base_path='common/layer_prob_base.yaml',  path='Q3/prob'):
     """
@@ -152,15 +129,106 @@ def generate_resnet_layers(model, base_path='common/layer_prob_base.yaml',  path
         os.makedirs(path)
     else:
         os.system(f"rm -rf {path}/*")
-
+    start = True
     for name, m in model.named_modules():
         if isinstance(m, nn.Conv2d):
             if hasattr(m, 'weight_mask'):
-                # compute number of zero channels
-                ##### WRITE CODE HERE #####
-                num_zero_channels = 0
+                num_zero_channels = torch.sum(torch.sum(torch.sum(torch.sum(model.state_dict()[name+"."+'weight_mask'], dim = -1), dim = -1), dim = -1) == 0).item()
             else:
                 num_zero_channels = 0
+            if start == True : 
+              out_channel_last = m.in_channels
+            conv_layer_generator(base_path = base_path, in_channels = out_channel_last, out_channels = m.out_channels - num_zero_channels, kernel_size = m.kernel_size[0], 
+            stride= m.stride[0], Height = input_activation[name].shape[-2], Width = input_activation[name].shape[-1], save_path = path + "/" + name)
 
-            # generate the yaml file for the conv layer using the function `conv_layer_generator`
+            start = False
+            out_channel_last = m.out_channels - num_zero_channels
+
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+
+def distill_from_frozen_teacher(
+    teacher: nn.Module,
+    student: nn.Module,
+    train_loader,
+    test_loader=None,
+    *,
+    epochs: int = 200,
+    lr: float = 0.1,
+    weight_decay: float = 5e-4,
+    momentum: float = 0.9,
+    temperature: float = 2.0,   # T
+    alpha_soft: float = 0.5,    # weight for soft targets; hard weight is (1-alpha_soft)
+    device: torch.device = torch.device("cuda"),
+):
+    """
+    Distill CIFAR-10 teacher -> scratch student.
+
+    Loss:
+      L = (1-a)*CE(student, y) + a*(T^2)*KL( softmax(t/T) || softmax(s/T) )
+    """
+    # teacher frozen
+    teacher.eval()
+    for p in teacher.parameters():
+        p.requires_grad_(False)
+
+    student.train()
+
+    optimizer = torch.optim.SGD(
+        student.parameters(),
+        lr=lr,
+        momentum=momentum,
+        weight_decay=weight_decay,
+        nesterov=True,
+    )
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+    
+    # Loss definition
+    ##### WRITE CODE HERE #####
+
+    history = {"train_loss": [], "train_acc": [], "test_acc": []}
+
+    for epoch in range(epochs):
+        student.train()
+        total, correct, loss_sum = 0, 0, 0.0
+
+        for x_t, x_s, y in train_loader:
+            x_t = x_t.to(device)
+            x_s = x_s.to(device)
+            y = y.to(device)
+            optimizer.zero_grad(set_to_none=True)
+
+            s_logits = student(x_s)
+            with torch.no_grad():
+                t_logits = teacher(x_t)
+
+            # hard loss
             ##### WRITE CODE HERE #####
+
+            # soft loss
+            ##### WRITE CODE HERE #####
+
+            # total loss
+            ##### WRITE CODE HERE #####
+            loss.backward()
+            optimizer.step()
+
+            bs = x_s.size(0)
+            loss_sum += loss.item() * bs
+            total += bs
+            correct += (s_logits.argmax(1) == y).sum().item()
+
+        scheduler.step()
+
+        train_loss = loss_sum / max(total, 1)
+        print("LOSS", train_loss)
+        train_acc = correct / max(total, 1)
+        history["train_loss"].append(train_loss)
+        history["train_acc"].append(train_acc)
+
+        if test_loader is not None:
+            test_acc = evaluate(student, test_loader, device)
+            print(test_acc)
+            history["test_acc"].append(test_acc)
+
+    return student, history

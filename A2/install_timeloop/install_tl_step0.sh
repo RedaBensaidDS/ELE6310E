@@ -1,6 +1,6 @@
 # Install system dependencies
 sudo apt-get update
-sudo apt install build-essential
+sudo apt install -y build-essential
 
 # This code adapted from accelergy-timeloop-infrastructure/Makefile:
 sudo DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata \
@@ -11,6 +11,7 @@ sudo DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata \
 						wget \
 						python3-dev \
 						python3-pip \
+						python3-venv \
 						scons \
 						make \
 						autotools-dev \
