@@ -26,6 +26,10 @@ else
 		export TL_INSTALL_PREFIX="${HOME}/.local" # for other cases (adjust as necessary)
 fi
 
+## Number of parallel jobs for make (should set to 8 or higher if
+## machine allows it)
+JOBS=8
+
 ## Whether to copy previously saved timeloop executables rather than
 ## recompiling. Use save_timeloop.sh to save the executables and
 ## libraries once they have been compiled once.
@@ -113,6 +117,9 @@ else
 		head -n173 Makefile > Makefile_new
 		rm Makefile
 		mv Makefile_new Makefile
+		# also update the number of parallel jobs
+		sed -E "s/\bmake[[:space:]]+-j[[:space:]]*8\b/make -j${JOBS}/g" Makefile
+		sed -E "s/\bscons[[:space:]]+-j[[:space:]]*8\b/scons -j${JOBS}/g" Makefile
 		make install_timeloop
 		source ~/install_tl/timeloop_make_install.sh
 fi
