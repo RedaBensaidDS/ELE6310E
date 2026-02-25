@@ -96,11 +96,12 @@ fi
 
 echo "---------- STEP 3: Install Accelergy -----------"
 cd accelergy-timeloop-infrastructure
+python3 -m pip install pyyaml # (missing dep in Makefile)
 make install_accelergy
 
 # Compile and install Timeloop
 echo "---------- STEP 4: Install Timeloop -----------"
-if [ $TL_USE_SAVED_TIMELOOP -eq 1 ]
+if [ "$TL_USE_SAVED_TIMELOOP" = "1" ];
 then
 		echo "Installing previously saved Timeloop executables:";
 		source ~/install_tl/timeloop_make_install_from_saved.sh
