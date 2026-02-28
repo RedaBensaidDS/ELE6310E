@@ -30,14 +30,13 @@ JOBS=8
 
 ## Whether to copy previously saved timeloop executables rather than
 ## recompiling. Use save_timeloop.sh to save the executables and
-## libraries once they have been compiled once.
-#TODO: DOESN'T WORK!
-#export TL_USE_SAVED_TIMELOOP=1
+## libraries after they have been compiled once.
+export TL_USE_SAVED_TIMELOOP=0
 
 ## Location where executables and shared libraries can be saved.
 ## MAKE SURE this path matches the mount point for your drive
 export GOOGLE_DRIVE_PATH="/content/gdrive/MyDrive"
-export TL_EXEC_SAVE_PATH="${GOOGLE_DRIVE_PATH}/timeloop_colab_executables"
+export TL_SAVE_PATH="${GOOGLE_DRIVE_PATH}/timeloop_colab_files"
 
 ## Can optionally get the git projects from Google Drive instead of
 ## cloning from github (recommended for Colab). In this case the
